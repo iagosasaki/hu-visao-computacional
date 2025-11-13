@@ -12,16 +12,17 @@ studentName = None
 def main():
     initScreen()
 
-def stopSimulator():
-    global inputFrameName
-    if messagebox.askyesno("Fechar Simulador", "Tem certeza que deseja fechar o simulador?"):
-        if inputFrameName is not None:
-            inputFrameName.destroy()
-        cv2.destroyAllWindows()
-        exit()
+def stopSimulator(currentWindow, windowType):
+        if windowType == "user":
+            if messagebox.askyesno("Fechar Simulador", "Tem certeza que deseja fechar o simulador?"):
+                currentWindow.destroy()
+        elif windowType == "surgery":
+            if messagebox.askyesno("Fechar Seleção", "Tem certeza que deseja voltar à tela inicial?"):
+                currentWindow.destroy()
+                initScreen()
 
 def storeStudentName():
-    global studentName,inputFrameName
+    global studentName, inputFrameName
 
     studentName = studentName.get().strip()
     if studentName == "":
@@ -29,7 +30,19 @@ def storeStudentName():
     else:
         messagebox.showinfo("Bem-vindo", f"Bem-vindo ao Simulador de Cirurgia, {studentName}!")
         inputFrameName.destroy()
-        initCam()
+        initSelectionSurgeryScreen()
+
+
+def storeSurgeryName(surgerySelected, inputFrameName=inputFrameName):
+    global surgeryName
+    surgeryName = None
+    if surgerySelected == 0:
+        messagebox.showwarning("Aviso", "Por favor, selecione um tipo de cirurgia.")
+        return
+    surgeryName = f"Cirurgia {chr(64 + surgerySelected)}"
+    messagebox.showinfo("Cirurgia Selecionada", "Cirurgia selecionada com sucesso!")
+    inputFrameName.destroy()
+    initCam()
 
 def initScreen():
     global inputFrameName, studentName
@@ -38,15 +51,31 @@ def initScreen():
 
     inputFrameName = tk.Tk()
     inputFrameName.title("Simulador de Cirurgia - HU")
-    inputFrameName.geometry("300x200")
+    inputFrameName.geometry("400x200")
 
     studentName = tk.StringVar()
 
     tk.Label(inputFrameName, text="Nome do Aluno:").pack(pady=5)
     tk.Entry(inputFrameName, textvariable=studentName, width=30).pack(pady=5)
     tk.Button(inputFrameName, text="Iniciar Simulador", command=storeStudentName).pack(pady=10)
-    tk.Button(inputFrameName, text="Fechar Simulador", command=stopSimulator).pack(pady=10)
+    tk.Button(inputFrameName, text="Fechar Simulador", command=lambda: stopSimulator(inputFrameName ,"user")).pack(pady=10)
     
+    tk.mainloop()
+
+def initSelectionSurgeryScreen():
+    inputFrameName = tk.Tk()
+    inputFrameName.title("Seleção de Cirurgia - HU")
+    inputFrameName.geometry("400x300")
+
+    surgerySelector = tk.IntVar()
+
+    tk.Label(inputFrameName, text="Selecione o Tipo de Cirurgia:").pack(pady=5)
+    tk.Radiobutton(inputFrameName, text="Cirurgia A", variable=surgerySelector, value=1).pack(pady=5)
+    tk.Radiobutton(inputFrameName, text="Cirurgia B", variable=surgerySelector, value=2).pack(pady=5)
+    tk.Radiobutton(inputFrameName, text="Cirurgia C", variable=surgerySelector, value=3).pack(pady=5)
+    tk.Button(inputFrameName, text="Confirmar", command=lambda: storeSurgeryName(surgerySelector.get(), inputFrameName)).pack(pady=10)
+    tk.Button(inputFrameName, text="Cancelar", command=lambda: stopSimulator(inputFrameName, "surgery")).pack(pady=10)
+
     tk.mainloop()
 
 def initCam():
@@ -76,6 +105,8 @@ def initCam():
                     cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3, cv2.LINE_AA)
         cv2.putText(img, f"Aluno: {studentName}", (width - 400, 70),
                     cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3, cv2.LINE_AA)
+        cv2.putText(img, f"Cirurgia: {surgeryName}", (width - 400, 120),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3, cv2.LINE_AA)
         cv2.putText(img, "Pressione:'t' para iniciar/zerar e 'c' para sair",
                     (50, height - 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
 
@@ -97,7 +128,7 @@ def initCam():
 
     cam.release()
     cv2.destroyAllWindows()
-    initScreen()
+    initSelectionSurgeryScreen()
 
 if __name__ == "__main__":
     main()
